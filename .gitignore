@@ -1,1 +1,5 @@
- 
+# Arquivos de configuração do Cursor
+.cursor
+.cursor-rules.json
+.cursor-snippets.json
+.cursor-*
