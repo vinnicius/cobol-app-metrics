@@ -3,8 +3,8 @@
        AUTHOR. COBOL-METRICS-TEAM.
       
       *----------------------------------------------------------------*
-      * Exemplo de programa COBOL com instrumentação de métricas       *
-      * utilizando identificadores de atributos otimizados             *
+      * Example of a COBOL program with metrics instrumentation        *
+      * using optimized attribute identifiers                          *
       *----------------------------------------------------------------*
        
        ENVIRONMENT DIVISION.
@@ -13,7 +13,7 @@
        WORKING-STORAGE SECTION.
        
       *----------------------------------------------------------------*
-      * Definição de estrutura para métricas com atributos             *
+      * Definition of structure for metrics with attributes            *
       *----------------------------------------------------------------*
        01 WS-METRIC.
           05 WS-METRIC-ID                PIC 9(3).
@@ -24,7 +24,7 @@
              10 WS-ATTR-VALUE            PIC X(16).
        
       *----------------------------------------------------------------*
-      * Contadores para instrumentação                                 *
+      * Counters for instrumentation                                   *
       *----------------------------------------------------------------*
        01 WS-COUNTERS.
           05 WS-FILE-READS               PIC 9(9) COMP VALUE ZEROS.
@@ -34,7 +34,7 @@
           05 WS-TRANS-ERRORS             PIC 9(9) COMP VALUE ZEROS.
        
       *----------------------------------------------------------------*
-      * Variáveis para medição de tempo (histogramas)                  *
+      * Variables for time measurement (histograms)                    *
       *----------------------------------------------------------------*
        01 WS-TIMERS.
           05 WS-TRANS-START-TIME         PIC 9(18) COMP VALUE ZEROS.
@@ -42,7 +42,7 @@
           05 WS-TRANS-DURATION-MS        PIC 9(9) COMP VALUE ZEROS.
        
       *----------------------------------------------------------------*
-      * Histograma para duração de transação                           *
+      * Histogram for transaction duration                             *
       *----------------------------------------------------------------*
        01 WS-TRANSACTION-HISTOGRAM.
           05 WS-BUCKET-0-100-MS          PIC 9(9) COMP VALUE ZEROS.
@@ -54,7 +54,7 @@
           05 WS-DURATION-COUNT           PIC 9(9) COMP VALUE ZEROS.
        
       *----------------------------------------------------------------*
-      * Variáveis para controle CICS                                   *
+      * Variables for CICS control                                     *
       *----------------------------------------------------------------*
        01 WS-CICS-CONTROL.
           05 WS-RESP                     PIC S9(8) COMP.
@@ -63,7 +63,7 @@
           05 WS-CHANNEL-NAME             PIC X(16) VALUE 'METRIC-CHANNEL'.
        
       *----------------------------------------------------------------*
-      * Variáveis para simulação de processamento                      *
+      * Variables for processing simulation                            *
       *----------------------------------------------------------------*
        01 WS-PROCESS-VARS.
           05 WS-CUSTOMER-ID              PIC X(8).
@@ -77,37 +77,37 @@
        PROCEDURE DIVISION.
        MAIN-LOGIC.
       *----------------------------------------------------------------*
-      * Iniciar processamento principal                                *
+      * Start main processing                                          *
       *----------------------------------------------------------------*
       
-           * Iniciar timer para medição da transação
+           * Start timer for transaction measurement
            EXEC CICS ASKTIME ABSTIME(WS-TRANS-START-TIME)
            END-EXEC
            
-           * Incrementar contador de transações iniciadas
+           * Increment counter for started transactions
            ADD 1 TO WS-TRANS-STARTED
            
-           * Executar processamento simulado
+           * Execute simulated processing
            PERFORM PROCESS-BUSINESS-TRANSACTION
            
-           * Finalizar timer e calcular duração
+           * End timer and calculate duration
            EXEC CICS ASKTIME ABSTIME(WS-TRANS-END-TIME)
            END-EXEC
            
            COMPUTE WS-TRANS-DURATION-MS = 
               (WS-TRANS-END-TIME - WS-TRANS-START-TIME) / 1000
            
-           * Registrar duração no histograma
+           * Record duration in histogram
            PERFORM RECORD-TRANSACTION-DURATION
            
-           * Verificar resultado e registrar contadores
+           * Check result and record counters
            IF WS-ERROR-OCCURRED
               ADD 1 TO WS-TRANS-ERRORS
            ELSE
               ADD 1 TO WS-TRANS-COMPLETED
            END-IF
            
-           * Exportar as métricas coletadas
+           * Export collected metrics
            PERFORM EXPORT-METRICS
            
            EXEC CICS RETURN
@@ -116,21 +116,21 @@
        
        PROCESS-BUSINESS-TRANSACTION.
       *----------------------------------------------------------------*
-      * Simulação de processamento de negócio                          *
+      * Simulation of business processing                              *
       *----------------------------------------------------------------*
       
-           * Simulação: Ler arquivo de cliente
+           * Simulation: Read customer file
            MOVE 'C1234567' TO WS-CUSTOMER-ID
            ADD 1 TO WS-FILE-READS
            
-           * Simulação: Consultar dados em banco
+           * Simulation: Query database
            MOVE '000123456789' TO WS-ACCOUNT-NUMBER
            ADD 1 TO WS-DB-SELECTS
            
-           * Simulação de processamento (com possibilidade de erro)
+           * Simulation of processing (with error possibility)
            MOVE 1250.75 TO WS-TRANSACTION-AMOUNT
            
-           * Simular erro em 10% dos casos
+           * Simulate error in 10% of cases
            IF FUNCTION RANDOM < 0.1
               MOVE 'Y' TO WS-ERROR-FLAG
               MOVE 'E123' TO WS-ERROR-CODE
@@ -141,14 +141,14 @@
        
        RECORD-TRANSACTION-DURATION.
       *----------------------------------------------------------------*
-      * Registrar a duração da transação no histograma apropriado      *
+      * Record the transaction duration in the appropriate histogram   *
       *----------------------------------------------------------------*
       
-           * Adicionar valor à soma e incrementar contagem
+           * Add value to sum and increment count
            ADD WS-TRANS-DURATION-MS TO WS-DURATION-SUM
            ADD 1 TO WS-DURATION-COUNT
            
-           * Registrar no bucket apropriado
+           * Record in the appropriate bucket
            EVALUATE TRUE
               WHEN WS-TRANS-DURATION-MS <= 100
                  ADD 1 TO WS-BUCKET-0-100-MS
@@ -165,34 +165,34 @@
        
        EXPORT-METRICS.
       *----------------------------------------------------------------*
-      * Exportar métricas coletadas usando atributos otimizados        *
+      * Export collected metrics using optimized attributes            *
       *----------------------------------------------------------------*
       
-           * Exportar contador de leituras de arquivo (101)
+           * Export file read counter (101)
            MOVE 101 TO WS-METRIC-ID
            MOVE WS-FILE-READS TO WS-METRIC-VALUE
            PERFORM SETUP-FILE-READ-ATTRIBUTES
            PERFORM SEND-METRIC
            
-           * Exportar contador de seleções DB (201)
+           * Export DB SELECT counter (201)
            MOVE 201 TO WS-METRIC-ID
            MOVE WS-DB-SELECTS TO WS-METRIC-VALUE
            PERFORM SETUP-DB-SELECT-ATTRIBUTES
            PERFORM SEND-METRIC
            
-           * Exportar contador de transações iniciadas (601)
+           * Export started transactions counter (601)
            MOVE 601 TO WS-METRIC-ID
            MOVE WS-TRANS-STARTED TO WS-METRIC-VALUE
            PERFORM SETUP-TRANSACTION-ATTRIBUTES
            PERFORM SEND-METRIC
            
-           * Exportar contador de transações completadas (602)
+           * Export completed transactions counter (602)
            MOVE 602 TO WS-METRIC-ID
            MOVE WS-TRANS-COMPLETED TO WS-METRIC-VALUE
            PERFORM SETUP-TRANSACTION-ATTRIBUTES
            PERFORM SEND-METRIC
            
-           * Exportar contador de erros (se houver)
+           * Export error counter (if any)
            IF WS-TRANS-ERRORS > 0
               MOVE 603 TO WS-METRIC-ID
               MOVE WS-TRANS-ERRORS TO WS-METRIC-VALUE
@@ -200,7 +200,7 @@
               PERFORM SEND-METRIC
            END-IF
            
-           * Exportar histograma de duração (somente se houve transação)
+           * Export duration histogram (only if transactions occurred)
            IF WS-DURATION-COUNT > 0
               PERFORM EXPORT-DURATION-HISTOGRAM
            END-IF
@@ -208,23 +208,23 @@
        
        SETUP-FILE-READ-ATTRIBUTES.
       *----------------------------------------------------------------*
-      * Configurar atributos para métricas de leitura de arquivo       *
+      * Configure attributes for file read metrics                     *
       *----------------------------------------------------------------*
       
-           * Limpar contador de atributos
+           * Clear attribute counter
            MOVE ZEROS TO WS-ATTR-COUNT
            
-           * Atributo 1: program_id (01)
+           * Attribute 1: program_id (01)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 1 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'METRICEX        ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 2: business_domain (20)
+           * Attribute 2: business_domain (20)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 20 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'BANKING         ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 3: file_name (40)
+           * Attribute 3: file_name (40)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 40 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'CUSTOMER        ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
@@ -232,23 +232,23 @@
        
        SETUP-DB-SELECT-ATTRIBUTES.
       *----------------------------------------------------------------*
-      * Configurar atributos para métricas de operações DB             *
+      * Configure attributes for DB operation metrics                  *
       *----------------------------------------------------------------*
       
-           * Limpar contador de atributos
+           * Clear attribute counter
            MOVE ZEROS TO WS-ATTR-COUNT
            
-           * Atributo 1: program_id (01)
+           * Attribute 1: program_id (01)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 1 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'METRICEX        ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 2: business_domain (20)
+           * Attribute 2: business_domain (20)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 20 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'BANKING         ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 3: table_name (50)
+           * Attribute 3: table_name (50)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 50 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'ACCOUNT         ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
@@ -256,28 +256,28 @@
        
        SETUP-TRANSACTION-ATTRIBUTES.
       *----------------------------------------------------------------*
-      * Configurar atributos para métricas de transação                *
+      * Configure attributes for transaction metrics                   *
       *----------------------------------------------------------------*
       
-           * Limpar contador de atributos
+           * Clear attribute counter
            MOVE ZEROS TO WS-ATTR-COUNT
            
-           * Atributo 1: program_id (01)
+           * Attribute 1: program_id (01)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 1 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'METRICEX        ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 2: transaction_id (02)
+           * Attribute 2: transaction_id (02)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 2 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'TRNX            ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 3: business_domain (20)
+           * Attribute 3: business_domain (20)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 20 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'BANKING         ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            
-           * Atributo 4: transaction_type (22)
+           * Attribute 4: transaction_type (22)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 22 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'ACCOUNT_INQUIRY ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
@@ -285,13 +285,13 @@
        
        SETUP-ERROR-ATTRIBUTES.
       *----------------------------------------------------------------*
-      * Configurar atributos para métricas de erro                     *
+      * Configure attributes for error metrics                         *
       *----------------------------------------------------------------*
       
-           * Configurar atributos base igual à transação
+           * Configure base attributes same as transaction
            PERFORM SETUP-TRANSACTION-ATTRIBUTES
            
-           * Atributo adicional: error_code (60)
+           * Additional attribute: error_code (60)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 60 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE WS-ERROR-CODE TO WS-ATTR-VALUE(WS-ATTR-COUNT)
@@ -299,19 +299,19 @@
        
        EXPORT-DURATION-HISTOGRAM.
       *----------------------------------------------------------------*
-      * Exportar histograma de duração                                 *
+      * Export duration histogram                                      *
       *----------------------------------------------------------------*
       
-           * ID da métrica para histograma de duração (610)
+           * Metric ID for duration histogram (610)
            MOVE 610 TO WS-METRIC-ID
            
-           * Configurar atributos comuns para todos os buckets
+           * Configure common attributes for all buckets
            PERFORM SETUP-TRANSACTION-ATTRIBUTES
            
            * Bucket 1: 0-100ms
            MOVE WS-BUCKET-0-100-MS TO WS-METRIC-VALUE
            
-           * Adicionar atributo de bucket (específico para histograma)
+           * Add bucket attribute (specific for histogram)
            ADD 1 TO WS-ATTR-COUNT
            MOVE 99 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE '0.1             ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
@@ -341,13 +341,13 @@
            MOVE '+Inf            ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            PERFORM SEND-METRIC
            
-           * Soma para cálculo da média
+           * Sum for average calculation
            MOVE WS-DURATION-SUM TO WS-METRIC-VALUE
            MOVE 99 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'sum             ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
            PERFORM SEND-METRIC
            
-           * Contagem total
+           * Total count
            MOVE WS-DURATION-COUNT TO WS-METRIC-VALUE
            MOVE 99 TO WS-ATTR-CODE(WS-ATTR-COUNT)
            MOVE 'count           ' TO WS-ATTR-VALUE(WS-ATTR-COUNT)
@@ -356,10 +356,10 @@
        
        SEND-METRIC.
       *----------------------------------------------------------------*
-      * Enviar métrica via CICS                                        *
+      * Send metric via CICS                                           *
       *----------------------------------------------------------------*
       
-           * Criar container para a métrica
+           * Create container for the metric
            EXEC CICS CREATE CONTAINER(WS-CONTAINER-NAME)
               CHANNEL(WS-CHANNEL-NAME)
               FROM(WS-METRIC)
@@ -368,9 +368,9 @@
               RESP2(WS-RESP2)
            END-EXEC
            
-           * Verificar se operação foi bem-sucedida
+           * Check if operation was successful
            IF WS-RESP = DFHRESP(NORMAL)
-              * Chamar programa coletor de métricas
+              * Call metric collector program
               EXEC CICS LINK PROGRAM('METCOLECT')
                  CHANNEL(WS-CHANNEL-NAME)
                  RESP(WS-RESP)

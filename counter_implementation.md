@@ -1,34 +1,34 @@
-# Implementação de Contadores (Counters) em COBOL
+# Implementation of Counters in COBOL
 
-Este documento descreve como implementar contadores para métricas em aplicações COBOL, seguindo as convenções do OpenTelemetry.
+This document describes how to implement counters for metrics in COBOL applications, following the OpenTelemetry conventions.
 
-## Conceito
+## Concept
 
-Em observabilidade, um contador (counter) é uma métrica cumulativa que representa um valor único que só pode aumentar ou ser redefinido para zero. Contadores são usados para medir eventos discretos ao longo do tempo, como:
-- Número de transações processadas
-- Quantidade de erros encontrados
-- Total de registros lidos ou escritos
+In observability, a counter is a cumulative metric that represents a single value that can only increase or be reset to zero. Counters are used to measure discrete events over time, such as:
+- Number of transactions processed
+- Number of errors encountered
+- Total records read or written
 
-## Estrutura Básica em COBOL
+## Basic Structure in COBOL
 
-Em COBOL, os contadores podem ser implementados como variáveis numéricas que são incrementadas quando ocorre um evento específico.
+In COBOL, counters can be implemented as numeric variables that are incremented when a specific event occurs.
 
 ```cobol
        WORKING-STORAGE SECTION.
-       01 WS-CONTADORES.
-          05 WS-CONTADOR-LEITURAS        PIC 9(9) COMP VALUE ZEROS.
-          05 WS-CONTADOR-ESCRITAS        PIC 9(9) COMP VALUE ZEROS.
-          05 WS-CONTADOR-ERROS           PIC 9(9) COMP VALUE ZEROS.
+       01 WS-COUNTERS.
+          05 WS-COUNTER-READS          PIC 9(9) COMP VALUE ZEROS.
+          05 WS-COUNTER-WRITES         PIC 9(9) COMP VALUE ZEROS.
+          05 WS-COUNTER-ERRORS         PIC 9(9) COMP VALUE ZEROS.
 ```
 
-## Contadores para Métricas de Negócio Genéricas
+## Counters for Generic Business Metrics
 
-Para implementar contadores de métricas de negócio que sejam aplicáveis a qualquer domínio, podemos usar a seguinte estrutura:
+To implement counters for business metrics that are applicable to any domain, we can use the following structure:
 
 ```cobol
        WORKING-STORAGE SECTION.
-       * Contadores genéricos de negócio
-       01 WS-BUSINESS-CONTADORES.
+       * Generic business counters
+       01 WS-BUSINESS-COUNTERS.
           05 WS-TRANS-STARTED          PIC 9(9) COMP VALUE ZEROS.
           05 WS-TRANS-COMPLETED        PIC 9(9) COMP VALUE ZEROS.
           05 WS-TRANS-FAILED           PIC 9(9) COMP VALUE ZEROS.
@@ -40,11 +40,11 @@ Para implementar contadores de métricas de negócio que sejam aplicáveis a qua
           05 WS-ENTITY-UPDATED         PIC 9(9) COMP VALUE ZEROS.
           05 WS-ENTITY-DELETED         PIC 9(9) COMP VALUE ZEROS.
           
-       * Estrutura para métricas com atributos de contexto
-       01 WS-BUSINESS-METRICA.
-          05 WS-METRICA-ID             PIC 9(3).
-          05 WS-METRICA-VALOR          PIC 9(9).
-          05 WS-METRICA-CONTEXT.
+       * Structure for metrics with contextual attributes
+       01 WS-BUSINESS-METRIC.
+          05 WS-METRIC-ID             PIC 9(3).
+          05 WS-METRIC-VALUE          PIC 9(9).
+          05 WS-METRIC-CONTEXT.
              10 WS-BUSINESS-DOMAIN     PIC X(15).
              10 WS-TRANSACTION-TYPE    PIC X(15).
              10 WS-ENTITY-TYPE         PIC X(15).
@@ -52,11 +52,11 @@ Para implementar contadores de métricas de negócio que sejam aplicáveis a qua
              10 WS-PRIORITY-LEVEL      PIC X(6).
 ```
 
-Estas estruturas permitem capturar eventos de negócio em qualquer domínio, enquanto os atributos contextuais fornecem a diferenciação específica do setor.
+These structures allow capturing business events in any domain, while contextual attributes provide the sector-specific differentiation.
 
-## Implementação Completa
+## Complete Implementation
 
-Abaixo está um exemplo completo de como implementar contadores em um programa COBOL:
+Below is a complete example of how to implement counters in a COBOL program:
 
 ```cobol
        IDENTIFICATION DIVISION.
@@ -66,107 +66,107 @@ Abaixo está um exemplo completo de como implementar contadores em um programa C
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        
-       * Definição dos contadores
-       01 WS-CONTADORES.
-          05 WS-CONTADOR-LEITURAS        PIC 9(9) COMP VALUE ZEROS.
-          05 WS-CONTADOR-ESCRITAS        PIC 9(9) COMP VALUE ZEROS.
-          05 WS-CONTADOR-ERROS           PIC 9(9) COMP VALUE ZEROS.
-          05 WS-CONTADOR-VALIDACOES      PIC 9(9) COMP VALUE ZEROS.
-          05 WS-CONTADOR-TRANSACOES      PIC 9(9) COMP VALUE ZEROS.
+       * Counter definitions
+       01 WS-COUNTERS.
+          05 WS-COUNTER-READS          PIC 9(9) COMP VALUE ZEROS.
+          05 WS-COUNTER-WRITES         PIC 9(9) COMP VALUE ZEROS.
+          05 WS-COUNTER-ERRORS         PIC 9(9) COMP VALUE ZEROS.
+          05 WS-COUNTER-VALIDATIONS    PIC 9(9) COMP VALUE ZEROS.
+          05 WS-COUNTER-TRANSACTIONS   PIC 9(9) COMP VALUE ZEROS.
        
-       * Definição da estrutura para exportar métricas
-       01 WS-METRICA.
-          05 WS-METRICA-ID               PIC 9(3).
-          05 WS-METRICA-VALOR            PIC 9(9).
-          05 WS-METRICA-ATRIBUTOS.
+       * Definition of structure to export metrics
+       01 WS-METRIC.
+          05 WS-METRIC-ID               PIC 9(3).
+          05 WS-METRIC-VALUE            PIC 9(9).
+          05 WS-METRIC-ATTRIBUTES.
              10 WS-PROGRAM-ID            PIC X(8).
              10 WS-TRANSACTION-ID        PIC X(4).
              10 WS-FILE-NAME             PIC X(8).
        
-       * Variáveis para controle de erros CICS
+       * Variables for CICS error control
        01 WS-RESP                        PIC S9(8) COMP.
        01 WS-RESP2                       PIC S9(8) COMP.
        
-       * Nome do container e canal para CICS
+       * Container and channel name for CICS
        01 WS-CONTAINER-NAME              PIC X(16) VALUE 'METRIC-CONTAINER'.
        01 WS-CHANNEL-NAME                PIC X(16) VALUE 'METRIC-CHANNEL'.
        
        PROCEDURE DIVISION.
        MAIN-LOGIC.
-           * Iniciar processamento principal
+           * Start main processing
            PERFORM PROCESS-BUSINESS-LOGIC.
            
-           * Exportar as métricas coletadas
+           * Export collected metrics
            PERFORM EXPORT-METRICS.
            
            EXEC CICS RETURN END-EXEC.
            
        PROCESS-BUSINESS-LOGIC.
-           * Simular operações de negócio que incrementam contadores
+           * Simulate business operations that increment counters
            
-           * Simulação: Leitura de registro
-           ADD 1 TO WS-CONTADOR-LEITURAS.
+           * Simulation: Read record
+           ADD 1 TO WS-COUNTER-READS.
            
-           * Simulação: Processamento com validação
-           ADD 1 TO WS-CONTADOR-VALIDACOES.
+           * Simulation: Processing with validation
+           ADD 1 TO WS-COUNTER-VALIDATIONS.
            
-           * Simulação: Escrita de registro (algumas vezes)
-           IF WS-CONTADOR-LEITURAS > 0
-              ADD 1 TO WS-CONTADOR-ESCRITAS
+           * Simulation: Write record (sometimes)
+           IF WS-COUNTER-READS > 0
+              ADD 1 TO WS-COUNTER-WRITES
            END-IF.
            
-           * Simulação: Ocorrência de erro (ocasional)
-           IF WS-CONTADOR-LEITURAS > 5
-              ADD 1 TO WS-CONTADOR-ERROS
+           * Simulation: Error occurrence (occasional)
+           IF WS-COUNTER-READS > 5
+              ADD 1 TO WS-COUNTER-ERRORS
            END-IF.
            
-           * Incrementar contador de transações
-           ADD 1 TO WS-CONTADOR-TRANSACOES.
+           * Increment transaction counter
+           ADD 1 TO WS-COUNTER-TRANSACTIONS.
        
        EXPORT-METRICS.
-           * Exportar cada contador como uma métrica separada
+           * Export each counter as a separate metric
            
-           * Contador de leituras (ID: 101)
-           MOVE 101 TO WS-METRICA-ID.
-           MOVE WS-CONTADOR-LEITURAS TO WS-METRICA-VALOR.
+           * Read counter (ID: 101)
+           MOVE 101 TO WS-METRIC-ID.
+           MOVE WS-COUNTER-READS TO WS-METRIC-VALUE.
            MOVE 'CNTREXMP' TO WS-PROGRAM-ID.
            MOVE 'METR' TO WS-TRANSACTION-ID.
            MOVE 'DATAFILE' TO WS-FILE-NAME.
            PERFORM SEND-METRIC.
            
-           * Contador de escritas (ID: 102)
-           MOVE 102 TO WS-METRICA-ID.
-           MOVE WS-CONTADOR-ESCRITAS TO WS-METRICA-VALOR.
+           * Write counter (ID: 102)
+           MOVE 102 TO WS-METRIC-ID.
+           MOVE WS-COUNTER-WRITES TO WS-METRIC-VALUE.
            PERFORM SEND-METRIC.
            
-           * Contador de erros (ID: 105)
-           MOVE 105 TO WS-METRICA-ID.
-           MOVE WS-CONTADOR-ERROS TO WS-METRICA-VALOR.
+           * Error counter (ID: 105)
+           MOVE 105 TO WS-METRIC-ID.
+           MOVE WS-COUNTER-ERRORS TO WS-METRIC-VALUE.
            PERFORM SEND-METRIC.
            
-           * Contador de validações (ID: 601)
-           MOVE 601 TO WS-METRICA-ID.
-           MOVE WS-CONTADOR-VALIDACOES TO WS-METRICA-VALOR.
+           * Validation counter (ID: 601)
+           MOVE 601 TO WS-METRIC-ID.
+           MOVE WS-COUNTER-VALIDATIONS TO WS-METRIC-VALUE.
            PERFORM SEND-METRIC.
            
-           * Contador de transações (ID: 401)
-           MOVE 401 TO WS-METRICA-ID.
-           MOVE WS-CONTADOR-TRANSACOES TO WS-METRICA-VALOR.
+           * Transaction counter (ID: 401)
+           MOVE 401 TO WS-METRIC-ID.
+           MOVE WS-COUNTER-TRANSACTIONS TO WS-METRIC-VALUE.
            PERFORM SEND-METRIC.
            
        SEND-METRIC.
-           * Criar container CICS para a métrica
+           * Create CICS container for the metric
            EXEC CICS CREATE CONTAINER(WS-CONTAINER-NAME)
               CHANNEL(WS-CHANNEL-NAME)
-              FROM(WS-METRICA)
-              FLENGTH(LENGTH OF WS-METRICA)
+              FROM(WS-METRIC)
+              FLENGTH(LENGTH OF WS-METRIC)
               RESP(WS-RESP)
               RESP2(WS-RESP2)
            END-EXEC.
            
-           * Verificar se a operação foi bem-sucedida
+           * Check if the operation was successful
            IF WS-RESP = DFHRESP(NORMAL)
-              * Chamar programa coletor de métricas
+              * Call metric collector program
               EXEC CICS LINK PROGRAM('METCOLLECT')
                  CHANNEL(WS-CHANNEL-NAME)
                  RESP(WS-RESP)
@@ -175,9 +175,9 @@ Abaixo está um exemplo completo de como implementar contadores em um programa C
            END-IF.
 ```
 
-## Implementação para Métricas Genéricas de Negócio
+## Implementation for Generic Business Metrics
 
-Aqui está um exemplo específico para implementação de contadores de negócio genéricos:
+Here is a specific example for implementing generic business counters:
 
 ```cobol
        IDENTIFICATION DIVISION.
@@ -187,8 +187,8 @@ Aqui está um exemplo específico para implementação de contadores de negócio
        DATA DIVISION.
        WORKING-STORAGE SECTION.
        
-       * Contadores de transações de negócio
-       01 WS-BUSINESS-CONTADORES.
+       * Business transaction counters
+       01 WS-BUSINESS-COUNTERS.
           05 WS-TRANS-STARTED          PIC 9(9) COMP VALUE ZEROS.
           05 WS-TRANS-COMPLETED        PIC 9(9) COMP VALUE ZEROS.
           05 WS-TRANS-FAILED           PIC 9(9) COMP VALUE ZEROS.
@@ -199,18 +199,18 @@ Aqui está um exemplo específico para implementação de contadores de negócio
           05 WS-ENTITY-CREATED         PIC 9(9) COMP VALUE ZEROS.
           05 WS-ENTITY-UPDATED         PIC 9(9) COMP VALUE ZEROS.
        
-       * Estrutura para métricas com atributos de contexto
-       01 WS-BUSINESS-METRICA.
-          05 WS-METRICA-ID             PIC 9(3).
-          05 WS-METRICA-VALOR          PIC 9(9).
-          05 WS-METRICA-CONTEXT.
+       * Structure for metrics with contextual attributes
+       01 WS-BUSINESS-METRIC.
+          05 WS-METRIC-ID             PIC 9(3).
+          05 WS-METRIC-VALUE          PIC 9(9).
+          05 WS-METRIC-CONTEXT.
              10 WS-BUSINESS-DOMAIN     PIC X(15).
              10 WS-TRANSACTION-TYPE    PIC X(15).
              10 WS-ENTITY-TYPE         PIC X(15).
              10 WS-PROCESS-NAME        PIC X(20).
              10 WS-PRIORITY-LEVEL      PIC X(6).
        
-       * Variáveis para controle CICS
+       * Variables for CICS control
        01 WS-RESP                      PIC S9(8) COMP.
        01 WS-RESP2                     PIC S9(8) COMP.
        01 WS-CONTAINER-NAME            PIC X(16) VALUE 'BSN-CONTAINER'.
@@ -218,32 +218,32 @@ Aqui está um exemplo específico para implementação de contadores de negócio
        
        PROCEDURE DIVISION.
        MAIN-LOGIC.
-           * Iniciar processamento de transação de negócio
+           * Start business transaction processing
            PERFORM PROCESS-BUSINESS-TRANSACTION.
            
-           * Exportar métricas coletadas
+           * Export collected metrics
            PERFORM EXPORT-BUSINESS-METRICS.
            
            EXEC CICS RETURN END-EXEC.
        
        PROCESS-BUSINESS-TRANSACTION.
-           * Incrementar contador de transações iniciadas
+           * Increment counter for started transactions
            ADD 1 TO WS-TRANS-STARTED
            
-           * Simulação: Realizar validações de negócio
+           * Simulation: Perform business validations
            PERFORM VALIDATE-BUSINESS-RULES
            
-           * Simulação: Processar entidade (criação ou atualização)
+           * Simulation: Process entity (creation or update)
            PERFORM PROCESS-BUSINESS-ENTITY
            
-           * Incrementar contador de transações completadas
+           * Increment counter for completed transactions
            ADD 1 TO WS-TRANS-COMPLETED.
        
        VALIDATE-BUSINESS-RULES.
-           * Incrementar contador de validações realizadas
+           * Increment counter for performed validations
            ADD 1 TO WS-VALID-PERFORMED
            
-           * Simulação: Validação bem-sucedida (95% do tempo)
+           * Simulation: Successful validation (95% of the time)
            IF FUNCTION RANDOM() > 0.05
               ADD 1 TO WS-VALID-PASSED
            ELSE
@@ -251,7 +251,7 @@ Aqui está um exemplo específico para implementação de contadores de negócio
            END-IF.
        
        PROCESS-BUSINESS-ENTITY.
-           * Simulação: Criar nova entidade (30% do tempo)
+           * Simulation: Create new entity (30% of the time)
            IF FUNCTION RANDOM() < 0.3
               ADD 1 TO WS-ENTITY-CREATED
            ELSE
@@ -259,47 +259,47 @@ Aqui está um exemplo específico para implementação de contadores de negócio
            END-IF.
        
        EXPORT-BUSINESS-METRICS.
-           * Preparar contexto comum para todas as métricas
+           * Prepare common context for all metrics
            MOVE 'BANKING' TO WS-BUSINESS-DOMAIN
            MOVE 'PAYMENT' TO WS-TRANSACTION-TYPE
            MOVE 'ACCOUNT' TO WS-ENTITY-TYPE
            MOVE 'FUNDS-TRANSFER' TO WS-PROCESS-NAME
            MOVE 'HIGH' TO WS-PRIORITY-LEVEL
            
-           * Exportar métricas de contador
-           MOVE 601 TO WS-METRICA-ID
-           MOVE WS-TRANS-STARTED TO WS-METRICA-VALOR
+           * Export counter metrics
+           MOVE 601 TO WS-METRIC-ID
+           MOVE WS-TRANS-STARTED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC
            
-           MOVE 602 TO WS-METRICA-ID
-           MOVE WS-TRANS-COMPLETED TO WS-METRICA-VALOR
+           MOVE 602 TO WS-METRIC-ID
+           MOVE WS-TRANS-COMPLETED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC
            
-           MOVE 651 TO WS-METRICA-ID
-           MOVE WS-VALID-PERFORMED TO WS-METRICA-VALOR
+           MOVE 651 TO WS-METRIC-ID
+           MOVE WS-VALID-PERFORMED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC
            
-           MOVE 652 TO WS-METRICA-ID
-           MOVE WS-VALID-PASSED TO WS-METRICA-VALOR
+           MOVE 652 TO WS-METRIC-ID
+           MOVE WS-VALID-PASSED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC
            
-           MOVE 653 TO WS-METRICA-ID
-           MOVE WS-VALID-FAILED TO WS-METRICA-VALOR
+           MOVE 653 TO WS-METRIC-ID
+           MOVE WS-VALID-FAILED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC
            
-           MOVE 671 TO WS-METRICA-ID
-           MOVE WS-ENTITY-CREATED TO WS-METRICA-VALOR
+           MOVE 671 TO WS-METRIC-ID
+           MOVE WS-ENTITY-CREATED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC
            
-           MOVE 672 TO WS-METRICA-ID
-           MOVE WS-ENTITY-UPDATED TO WS-METRICA-VALOR
+           MOVE 672 TO WS-METRIC-ID
+           MOVE WS-ENTITY-UPDATED TO WS-METRIC-VALUE
            PERFORM SEND-BUSINESS-METRIC.
        
        SEND-BUSINESS-METRIC.
            EXEC CICS CREATE CONTAINER(WS-CONTAINER-NAME)
               CHANNEL(WS-CHANNEL-NAME)
-              FROM(WS-BUSINESS-METRICA)
-              FLENGTH(LENGTH OF WS-BUSINESS-METRICA)
+              FROM(WS-BUSINESS-METRIC)
+              FLENGTH(LENGTH OF WS-BUSINESS-METRIC)
               RESP(WS-RESP)
               RESP2(WS-RESP2)
            END-EXEC
@@ -313,21 +313,21 @@ Aqui está um exemplo específico para implementação de contadores de negócio
            END-IF.
 ```
 
-## Implementação Alternativa com TSQ (Temporary Storage Queue)
+## Alternative Implementation with TSQ (Temporary Storage Queue)
 
-Outra abordagem comum é usar TSQs do CICS para armazenar métricas:
+Another common approach is to use CICS TSQs to store metrics:
 
 ```cobol
        EXPORT-METRIC-TSQ.
-           * Preparar dados da métrica
-           MOVE 101 TO WS-METRICA-ID.
-           MOVE WS-CONTADOR-LEITURAS TO WS-METRICA-VALOR.
+           * Prepare metric data
+           MOVE 101 TO WS-METRIC-ID.
+           MOVE WS-COUNTER-READS TO WS-METRIC-VALUE.
            
-           * Gravar métrica em uma TSQ para coleta posterior
+           * Write metric to a TSQ for later collection
            EXEC CICS WRITEQ TS
               QUEUE('METRICSQ')
-              FROM(WS-METRICA)
-              LENGTH(LENGTH OF WS-METRICA)
+              FROM(WS-METRIC)
+              LENGTH(LENGTH OF WS-METRIC)
               ITEM(1)
               REWRITE
               RESP(WS-RESP)
@@ -335,83 +335,83 @@ Outra abordagem comum é usar TSQs do CICS para armazenar métricas:
            END-EXEC.
 ```
 
-## Implementação com Shared Memory (COMMAREA em CICS)
+## Implementation with Shared Memory (COMMAREA in CICS)
 
-Para métricas que precisam ser compartilhadas entre transações:
+For metrics that need to be shared between transactions:
 
 ```cobol
-       * Em um programa de inicialização ou controle
+       * In an initialization or control program
        INITIALIZE-SHARED-COUNTERS.
            EXEC CICS GET CONTAINER('SHARED-COUNTERS')
               CHANNEL('GLOBAL-METRICS')
-              INTO(WS-CONTADORES)
+              INTO(WS-COUNTERS)
               RESP(WS-RESP)
               RESP2(WS-RESP2)
            END-EXEC.
            
            IF WS-RESP NOT = DFHRESP(NORMAL)
-              INITIALIZE WS-CONTADORES
+              INITIALIZE WS-COUNTERS
               EXEC CICS PUT CONTAINER('SHARED-COUNTERS')
                  CHANNEL('GLOBAL-METRICS')
-                 FROM(WS-CONTADORES)
+                 FROM(WS-COUNTERS)
                  RESP(WS-RESP)
                  RESP2(WS-RESP2)
               END-EXEC
            END-IF.
            
-       * Em qualquer programa que precise atualizar os contadores
+       * In any program that needs to update the counters
        UPDATE-SHARED-COUNTERS.
            EXEC CICS GET CONTAINER('SHARED-COUNTERS')
               CHANNEL('GLOBAL-METRICS')
-              INTO(WS-CONTADORES)
+              INTO(WS-COUNTERS)
               RESP(WS-RESP)
               RESP2(WS-RESP2)
            END-EXEC.
            
-           ADD 1 TO WS-CONTADOR-LEITURAS.
+           ADD 1 TO WS-COUNTER-READS.
            
            EXEC CICS PUT CONTAINER('SHARED-COUNTERS')
               CHANNEL('GLOBAL-METRICS')
-              FROM(WS-CONTADORES)
+              FROM(WS-COUNTERS)
               RESP(WS-RESP)
               RESP2(WS-RESP2)
            END-EXEC.
 ```
 
-## Considerações de Performance
+## Performance Considerations
 
-Ao implementar contadores em COBOL, é importante considerar:
+When implementing counters in COBOL, it's important to consider:
 
-1. **Uso de instruções COMP (COMPUTATIONAL)**: Armazene contadores como PIC 9(9) COMP para melhor performance.
+1. **Use of COMP (COMPUTATIONAL) instructions**: Store counters as PIC 9(9) COMP for better performance.
 
-2. **Frequência de atualização**: Em loops de alto volume, considere incrementar contadores em lotes (por exemplo, a cada 100 processamentos) para reduzir o overhead.
+2. **Update frequency**: In high-volume loops, consider incrementing counters in batches (for example, every 100 processes) to reduce overhead.
 
-3. **Atomicidade**: Em ambientes multithread ou sistemas compartilhados, garanta a atomicidade das operações de incremento.
+3. **Atomicity**: In multi-threaded environments or shared systems, ensure atomicity of increment operations.
 
-4. **Limites de tamanho**: Certifique-se de que seus contadores sejam grandes o suficiente para não sofrer overflow durante o ciclo de vida esperado.
+4. **Size limits**: Make sure your counters are large enough to not overflow during the expected lifecycle.
 
-## Integração com Prometheus
+## Integration with Prometheus
 
-Para integrar com Prometheus, o formato de saída para métricas de negócio seria algo como:
+For integration with Prometheus, the output format for business metrics would be something like:
 
 ```
-# HELP cobol_business_transaction_started_total Total de transações de negócio iniciadas
+# HELP cobol_business_transaction_started_total Total business transactions started
 # TYPE cobol_business_transaction_started_total counter
 cobol_business_transaction_started_total{business_domain="BANKING",transaction_type="PAYMENT",entity_type="ACCOUNT",process_name="FUNDS-TRANSFER",priority="HIGH"} 1500
 ```
 
-O programa COBOL pode gerar este formato em um arquivo ou disponibilizá-lo por meio de uma API para que um exportador do Prometheus possa coletá-lo.
+The COBOL program can generate this format in a file or make it available through an API for a Prometheus exporter to collect it.
 
-## Vantagens das Métricas Genéricas de Negócio
+## Advantages of Generic Business Metrics
 
-A abordagem de métricas genéricas de negócio com atributos contextuais oferece várias vantagens:
+The approach of generic business metrics with contextual attributes offers several advantages:
 
-1. **Reusabilidade do código**: O mesmo código de instrumentação pode ser reutilizado em diferentes programas COBOL, independentemente do domínio de negócio.
+1. **Code reusability**: The same instrumentation code can be reused in different COBOL programs, regardless of the business domain.
 
-2. **Flexibilidade analítica**: Os atributos permitem que analistas de dados filtrem e agrupem métricas de acordo com diferentes dimensões de negócio.
+2. **Analytical flexibility**: Attributes allow data analysts to filter and group metrics according to different business dimensions.
 
-3. **Rastreabilidade end-to-end**: Ao manter consistência nos atributos entre diferentes serviços, é possível correlacionar métricas entre diferentes sistemas.
+3. **End-to-end traceability**: By maintaining consistency in attributes across different services, it's possible to correlate metrics between different systems.
 
-4. **Evolução independente**: É possível adicionar novos atributos contextuais sem alterar a estrutura básica das métricas.
+4. **Independent evolution**: It's possible to add new contextual attributes without changing the basic structure of metrics.
 
-5. **Integração simplificada**: Sistemas modernos de observabilidade como Prometheus podem facilmente consumir esse formato padronizado. 
+5. **Simplified integration**: Modern observability systems like Prometheus can easily consume this standardized format. 
